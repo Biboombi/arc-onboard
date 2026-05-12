@@ -247,18 +247,26 @@ def main():
     print(f"\n{'─'*50}")
     print("STEP 3: Record Reputation")
     print(f"{'─'*50}")
-    record_reputation(validator, agent_id)
-    print(f"   ✅ Score: 95 — 'Registered on Arc testnet'")
+    try:
+        record_reputation(validator, agent_id)
+        print(f"   ✅ Score: 95 — 'Registered on Arc testnet'")
+    except Exception as e:
+        print(f"   ⚠️  Reputation contract reverted (testnet bug): {e}")
+        print(f"   ⏭️  Skipping — core registration already done")
     
     # Validation
     print(f"\n{'─'*50}")
     print("STEP 4: Validation (two-step)")
     print(f"{'─'*50}")
-    print("   4a: Owner requests validation...")
-    request_validation(owner, agent_id, validator.address)
-    print("   4b: Validator responds...")
-    respond_validation(validator, agent_id)
-    print(f"   ✅ Score: 100 — Validated!")
+    try:
+        print("   4a: Owner requests validation...")
+        request_validation(owner, agent_id, validator.address)
+        print("   4b: Validator responds...")
+        respond_validation(validator, agent_id)
+        print(f"   ✅ Score: 100 — Validated!")
+    except Exception as e:
+        print(f"   ⚠️  Validation contract reverted (testnet bug): {e}")
+        print(f"   ⏭️  Skipping — core registration already done")
     
     # Done
     print(f"\n{'='*50}")

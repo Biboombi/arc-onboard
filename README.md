@@ -90,8 +90,34 @@ $ python3 onboard.py
 ... (continues to first paid call)
 ```
 
+## Register as an Arc AI Agent (ERC-8004)
+
+Once onboarded, register your agent on-chain:
+
+```bash
+python3 register_agent.py
+```
+
+This mints an ERC-8004 Agent NFT, giving your AI agent:
+- **On-chain identity** — verifiable Agent ID
+- **Reputation** — immutable record on Arc
+- **Discoverability** — others can find your agent
+
+### Hermes Agent (Live Demo)
+
+| Field | Value |
+|-------|-------|
+| **Agent ID** | **5414** |
+| **NFT Contract** | `0x8004A818BFB912233c491871b3d84c89A494BD9e` |
+| **Owner** | `0x8075dE962BcEf1dF183b82dAD30Ac260F61798fF` |
+| **Chain** | Arc Testnet (5042002) |
+| **TX** | `0xaf475776ba6177c3a2d7e1d5f4cf15a803de4350db12d91f9b5b2f7c938bff18` |
+| **Block** | 41,856,444 |
+| **Explorer** | [View on Arcscan](https://testnet.arcscan.app/token/0x8004A818BFB912233c491871b3d84c89A494BD9e?a=5414) |
+
 ## After Onboarding
 
+- **Register your agent:** `python3 register_agent.py`
 - **Discover services:** `circle services search`
 - **Build on Arc:** https://docs.arc.network/ai/mcp
 - **Join Arc House:** https://community.arc.network

@@ -4,6 +4,14 @@
 
 > Built by [@thomas](https://x.com/) — after personally hitting every pitfall during Circle Agent Stack onboarding.
 
+## Tools
+
+| Tool | What | How |
+|------|------|-----|
+| `onboard.py` | CLI→Wallet→Gateway→x402 wizard | `python3 onboard.py` |
+| `register_agent.py` | ERC-8004 Agent NFT | `python3 register_agent.py` |
+| `x402-scanner/` | **Paid multi-factor scanner** | See below ↓ |
+
 ## Quick Start
 
 ```bash
@@ -121,6 +129,29 @@ This mints an ERC-8004 Agent NFT, giving your AI agent:
 - **Discover services:** `circle services search`
 - **Build on Arc:** https://docs.arc.network/ai/mcp
 - **Join Arc House:** https://community.arc.network
+
+## x402 Paid Scanner (NEW)
+
+Deploy your own paywalled crypto scanner on Arc:
+
+```bash
+cd x402-scanner
+pip install -r requirements.txt
+
+# Terminal 1: Server
+X402_SELLER_KEY=0x... python3 server.py --port 8742
+
+# Terminal 2: Client
+python3 client.py setup           # generate keys
+python3 client.py deposit 1       # fund Gateway
+python3 client.py scan BTCUSDT    # $0.01 per scan
+```
+
+**Flow:** 402 Payment Required → EIP-712 TransferWithAuthorization → on-chain settlement → multi-factor analysis
+
+**Scoring:** RSI(25%) + OI Δ(20%) + Taker(15%) + Funding(15%) + Trend(15%) + BTC Corr(10%)
+
+**Network:** Arc Testnet (5042002) · GatewayWallet · USDC nanopayments
 
 ## License
 

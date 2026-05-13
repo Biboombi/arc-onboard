@@ -1,0 +1,22 @@
+services:
+  # x402 Multi-Factor Scanner
+  - type: web
+    name: arc-scanner
+    env: python
+    rootDir: x402-scanner
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py --port $PORT
+    envVars:
+      - key: X402_SELLER_KEY
+        sync: false
+
+  # ArcPredict Terminal — Polymarket TA
+  - type: web
+    name: arc-predict
+    env: python
+    rootDir: polymarket-terminal
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py --port $PORT
+    envVars:
+      - key: X402_SELLER_KEY
+        sync: false

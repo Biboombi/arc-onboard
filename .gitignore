@@ -1,6 +1,9 @@
 venv/
+**/venv/
 __pycache__/
 *.pyc
 .env
 data/subscriptions.json
 .DS_Store
+*.log
+logs/

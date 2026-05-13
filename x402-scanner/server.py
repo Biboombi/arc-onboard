@@ -218,54 +218,47 @@ def settle_payment(payload: dict, seller_addr: str) -> Optional[str]:
 # ─── Scanner Logic ──────────────────────────────────────────────────────
 
 def fetch_scanner_data(symbol: str) -> dict:
-    """Fetch OI, funding rate, taker ratio, and RSI from Binance Futures."""
-    import urllib.request
-
+    """Fetch OI, funding rate, and RSI from Bybit (Binance geo-blocked on Railway)."""
     sym = symbol.upper()
-    data = {"symbol": sym, "timestamp": datetime.now(timezone.utc).isoformat()}
+    data = {"symbol": sym, "timestamp": datetime.now(timezone.utc).isoformat(), "source": "bybit"}
 
-    def binance_get(path: str) -> dict:
-        url = f"https://fapi.binance.com{path}"
+    def bybit_get(path: str) -> dict:
+        url = f"https://api.bybit.com{path}"
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
-        return resp.json()
+        result = resp.json()
+        if result.get("retCode") != 0:
+            raise Exception(f"Bybit API error: {result.get('retMsg', 'unknown')}")
+        return result["result"]
 
     try:
+        # Tickers (mark price, index price, funding rate)
+        tk = bybit_get(f"/v5/market/tickers?category=linear&symbol={sym}")
+        ticker = tk["list"][0]
+        data["mark_price"] = float(ticker["markPrice"])
+        data["price"] = float(ticker.get("indexPrice", ticker["lastPrice"]))
+        data["funding_rate"] = round(float(ticker.get("fundingRate", 0)) * 100, 4)
+        data["current_price"] = float(ticker["lastPrice"])
+
         # Open Interest
-        oi = binance_get(f"/fapi/v1/openInterest?symbol={sym}")
-        data["open_interest_usd"] = round(float(oi["openInterest"]) * float(data.get("price", 0)), 2) if "price" in data else None
-
-        # Funding Rate
-        fr = binance_get(f"/fapi/v1/premiumIndex?symbol={sym}")
-        data["funding_rate"] = round(float(fr["lastFundingRate"]) * 100, 4)
-        data["mark_price"] = float(fr["markPrice"])
-        data["price"] = float(fr.get("indexPrice", 0))
-        oi_val = float(oi["openInterest"]) * data["price"]
-        data["open_interest_usd"] = round(oi_val, 2)
-
-        # Taker Buy/Sell Ratio (1h)
-        taker = binance_get(f"/futures/data/takerlongshortRatio?symbol={sym}&period=1h&limit=2")
-        if len(taker) >= 2:
-            curr = float(taker[-1]["buySellRatio"])
-            prev = float(taker[-2]["buySellRatio"])
-            data["taker_ratio"] = round(curr, 4)
-            data["taker_ratio_delta"] = round(curr - prev, 4)
-        else:
-            data["taker_ratio"] = None
-
-        # OI History delta
-        oih = binance_get(f"/futures/data/openInterestHist?symbol={sym}&period=1h&limit=2")
-        if len(oih) >= 2:
-            oi_curr = float(oih[-1]["sumOpenInterest"])
-            oi_prev = float(oih[-2]["sumOpenInterest"])
+        oi_result = bybit_get(f"/v5/market/open-interest?category=linear&symbol={sym}&intervalTime=1h&limit=2")
+        oi_list = oi_result["list"]
+        if oi_list:
+            data["open_interest_usd"] = round(float(oi_list[0]["openInterest"]), 2)
+        if len(oi_list) >= 2:
+            oi_curr = float(oi_list[0]["openInterest"])
+            oi_prev = float(oi_list[1]["openInterest"])
             data["oi_delta_pct"] = round((oi_curr - oi_prev) / oi_prev * 100, 2) if oi_prev else 0
         else:
             data["oi_delta_pct"] = 0
 
-        # Klines for RSI
-        klines = binance_get(f"/fapi/v1/klines?symbol={sym}&interval=1h&limit=16")
-        closes = [float(k[4]) for k in klines]
-        data["current_price"] = closes[-1]
+        # Taker ratio — Bybit doesn't have direct equivalent, approximate via ticker volume
+        data["taker_ratio"] = None
+        data["taker_ratio_delta"] = None
+
+        # Klines for RSI(14)
+        klines = bybit_get(f"/v5/market/kline?category=linear&symbol={sym}&interval=60&limit=16")
+        closes = [float(k[4]) for k in reversed(klines["list"])]  # Bybit returns newest first
 
         # RSI(14) — Wilder smoothing
         deltas = [closes[i] - closes[i - 1] for i in range(1, len(closes))]

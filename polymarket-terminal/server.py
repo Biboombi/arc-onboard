@@ -183,7 +183,7 @@ def compute_transfer_spec_hash(message: dict) -> bytes:
 
 
 def verify_payment_signature(payload: dict) -> Optional[str]:
-    """Verify EIP-712 signature using low-level hash (matches MetaMask v4)."""
+    """Verify EIP-712 signature. Returns buyer address if valid, None otherwise."""
     try:
         msg = {
             "from": Web3.to_checksum_address(payload["from"]),
@@ -200,14 +200,12 @@ def verify_payment_signature(payload: dict) -> Optional[str]:
             int(sig["v"]),
         )
 
-        # Use low-level EIP-712 hash instead of encode_typed_data
-        # (encode_typed_data encoding differs from MetaMask eth_signTypedData_v4 in newer eth-account)
-        from eth_account._utils.encode_typed_data.encoding_and_hashing import hash_domain, hash_eip712_message
-        domain_hash = hash_domain(EIP712_DOMAIN)
-        msg_hash = hash_eip712_message(EIP712_TYPES, msg)
-        full_hash = Web3.keccak(b"\x19\x01" + domain_hash + msg_hash)
-        recovered = Account._recover_hash(full_hash, vrs=(v, r, s))
-
+        encoded = encode_typed_data(
+            domain_data=EIP712_DOMAIN,
+            message_types=EIP712_TYPES,
+            message_data=msg,
+        )
+        recovered = Account.recover_message(encoded, vrs=(v, r, s))
         if recovered.lower() != msg["from"].lower():
             print(f"[verify] Sig mismatch: recovered={recovered}, from={msg['from']}")
             return None

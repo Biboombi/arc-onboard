@@ -1,0 +1,15 @@
+INFO:     Started server process [36941]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8742 (Press CTRL+C to quit)
+🔑 Seller: 0x8075dE962BcEf1dF183b82dAD30Ac260F61798fF
+   ETH balance: 18.979925526324 ETH
+   Gateway balance: 0.0 USDC
+
+💰 Price: $0.01 USDC per scan
+🌐 Server: http://0.0.0.0:8742
+📡 Endpoint: GET /scan?symbol=BTCUSDT
+📚 Docs: http://0.0.0.0:8742/docs
+
+INFO:     127.0.0.1:51774 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51788 - "GET /version HTTP/1.1" 200 OK

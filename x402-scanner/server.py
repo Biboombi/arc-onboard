@@ -218,7 +218,7 @@ def settle_payment(payload: dict, seller_addr: str) -> Optional[str]:
 # ─── Scanner Logic ──────────────────────────────────────────────────────
 
 def fetch_scanner_data(symbol: str) -> dict:
-    """Fetch OI, funding rate, and RSI from OKX (works on Railway, free, no API key)."""
+    """Fetch OI, funding rate, and RSI from OKX (free, no API key, no geo-block)."""
     sym = symbol.upper().replace("USDT", "-USDT-SWAP")
     data = {"symbol": sym, "timestamp": datetime.now(timezone.utc).isoformat(), "source": "okx"}
 
@@ -233,12 +233,18 @@ def fetch_scanner_data(symbol: str) -> dict:
         return result["data"]
 
     try:
-        # Ticker (mark, last, funding rate)
+        # Price from ticker
         tickers = okx_get(f"/api/v5/market/ticker?instId={sym}")
         ticker = tickers[0]
-        data["mark_price"] = float(ticker["markPx"])
         data["price"] = float(ticker["last"])
         data["current_price"] = data["price"]
+
+        # Mark price (separate endpoint)
+        mark = okx_get(f"/api/v5/public/mark-price?instId={sym}")
+        if mark:
+            data["mark_price"] = float(mark[0]["markPx"])
+        else:
+            data["mark_price"] = data["price"]
 
         # Funding rate
         fr = okx_get(f"/api/v5/public/funding-rate?instId={sym}")
@@ -247,12 +253,12 @@ def fetch_scanner_data(symbol: str) -> dict:
         else:
             data["funding_rate"] = 0
 
-        # Open Interest
+        # Open Interest (OKX gives oiUsd directly)
         oi = okx_get(f"/api/v5/public/open-interest?instId={sym}")
         if oi:
-            data["open_interest_usd"] = round(float(oi[0]["oi"]) * float(oi[0].get("px", data["price"])), 2)
+            data["open_interest_usd"] = round(float(oi[0]["oiUsd"]), 2)
 
-        # OI delta — compare last 2 entries
+        # OI delta
         oi_hist = okx_get(f"/api/v5/public/open-interest?instId={sym}&limit=2")
         if len(oi_hist) >= 2:
             oi_curr = float(oi_hist[0]["oi"])

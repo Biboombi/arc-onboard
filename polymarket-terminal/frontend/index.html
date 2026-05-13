@@ -784,7 +784,7 @@ async function subscribeWithX402() {
     btn.textContent = 'Sign in wallet...';
     const sig = await window.ethereum.request({
       method: 'eth_signTypedData_v4',
-      params: [state.wallet, JSON.stringify({ domain, types, primaryType: 'TransferWithAuthorization', message })],
+      params: [state.wallet, { domain, types, primaryType: 'TransferWithAuthorization', message }],
     });
 
     // Parse signature (r, s, v)

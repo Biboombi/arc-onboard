@@ -524,6 +524,11 @@ async function selectMarket(id) {
 
   // Load chart data
   await loadChartData(id);
+
+  // Load premium TA if subscribed
+  if (state.subscription.active) {
+    await loadPremiumAnalysis();
+  }
 }
 
 // ═══════════════ CHART ═══════════════

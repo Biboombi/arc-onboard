@@ -2,7 +2,7 @@
 
 **One command to go from zero to your first x402 paid API call on Arc.**
 
-> Built by [@thomas](https://x.com/) — after personally hitting every pitfall during Circle Agent Stack onboarding.
+> Built by [@biboombii](https://x.com/biboombii) — after personally hitting every pitfall during Circle Agent Stack onboarding.
 
 ## Tools
 

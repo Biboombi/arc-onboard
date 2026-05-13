@@ -822,7 +822,8 @@ async function subscribeWithX402() {
       updateUI();
       if (state.selectedMarket) loadPremiumAnalysis();
     } else {
-      toast(result.error || 'Subscription failed', 'error');
+      const errMsg = result.detail ? `${result.error}: ${result.detail}` : (result.error || 'Subscription failed');
+      toast(errMsg, 'error');
     }
   } catch (e) {
     console.error('Subscription error:', e);

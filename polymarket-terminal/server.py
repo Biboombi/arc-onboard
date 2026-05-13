@@ -182,8 +182,8 @@ def compute_transfer_spec_hash(message: dict) -> bytes:
     return Web3.keccak(b"\x19\x01" + domain_hash + msg_hash)
 
 
-def verify_payment_signature(payload: dict) -> Optional[str]:
-    """Verify EIP-712 signature. Returns buyer address if valid, None otherwise."""
+def verify_payment_signature(payload: dict) -> tuple:
+    """Verify EIP-712 signature. Returns (address, None) on success, (None, error) on failure."""
     try:
         msg = {
             "from": Web3.to_checksum_address(payload["from"]),
@@ -207,28 +207,23 @@ def verify_payment_signature(payload: dict) -> Optional[str]:
         )
         recovered = Account.recover_message(encoded, vrs=(v, r, s))
         if recovered.lower() != msg["from"].lower():
-            print(f"[verify] Sig mismatch: recovered={recovered}, from={msg['from']}")
-            return None
+            return None, f"Signature mismatch: recovered {recovered[:10]}..., expected {msg['from'][:10]}..."
 
         # Check timestamps
         now = int(time.time())
         if now < msg["validAfter"]:
-            print(f"[verify] Not yet valid: now={now}, validAfter={msg['validAfter']}")
-            return None
+            return None, f"Not yet valid: now={now}, validAfter={msg['validAfter']}"
         if now > msg["validBefore"]:
-            print(f"[verify] Expired: now={now}, validBefore={msg['validBefore']}")
-            return None
+            return None, f"Expired: now={now}, validBefore={msg['validBefore']}, diff={now - msg['validBefore']}s"
 
         # Check that value >= price
         price_atomic = int(_price_usd * 1_000_000)
         if msg["value"] < price_atomic:
-            print(f"[verify] Insufficient: value={msg['value']}, required={price_atomic}")
-            return None
+            return None, f"Insufficient: value={msg['value']}, required={price_atomic}"
 
-        return recovered
+        return recovered, None
     except Exception as e:
-        print(f"[verify] Exception: {e}")
-        return None
+        return None, f"Exception: {e}"
 
 
 def settle_payment(payload: dict, seller_addr: str) -> Optional[str]:
@@ -892,9 +887,12 @@ def api_subscribe(request: Request):
     except json.JSONDecodeError:
         return JSONResponse(status_code=400, content={"error": "Invalid Payment-Signature format"})
 
-    buyer = verify_payment_signature(payload)
+    buyer, verify_error = verify_payment_signature(payload)
     if not buyer:
-        return JSONResponse(status_code=402, content={"error": "Invalid or expired payment signature"})
+        return JSONResponse(status_code=402, content={
+            "error": "Invalid or expired payment signature",
+            "detail": verify_error or "Unknown verification error"
+        })
 
     # Check value
     price_atomic = int(_price_usd * 1_000_000)

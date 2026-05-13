@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes x402 Scanner — $0.01/scan</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .container { max-width: 640px; width: 100%; }
+    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: #888; font-size: 0.9rem; margin-bottom: 32px; }
+    .card {
+      background: #14141f;
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .card h2 { font-size: 1rem; color: #aaa; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+    button {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    button:hover { background: #2563eb; }
+    button:disabled { background: #333; color: #666; cursor: not-allowed; }
+    button.secondary { background: #1e1e2e; border: 1px solid #3a3a4a; }
+    button.secondary:hover { background: #2a2a3a; }
+    input {
+      background: #1a1a28;
+      border: 1px solid #3a3a4a;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+    input:focus { outline: none; border-color: #3b82f6; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-green { background: #064e3b; color: #34d399; }
+    .badge-red { background: #4c0519; color: #f87171; }
+    .badge-yellow { background: #451a03; color: #fbbf24; }
+    .badge-blue { background: #1e3a5f; color: #60a5fa; }
+    .addr { font-family: monospace; font-size: 0.85rem; color: #888; word-break: break-all; }
+    .price-tag { font-size: 2rem; font-weight: 800; color: #34d399; }
+    .stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1e1e2e; }
+    .stat:last-child { border-bottom: none; }
+    .stat-label { color: #888; }
+    .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .grade {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 1.1rem;
+      margin-right: 8px;
+    }
+    .grade-A { background: #064e3b; color: #34d399; }
+    .grade-B { background: #451a03; color: #fbbf24; }
+    .grade-C { background: #4c0519; color: #f87171; }
+    .factors { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .factor {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      background: #1a1a28;
+      border: 1px solid #2a2a3a;
+    }
+    .steps { list-style: none; counter-reset: step; }
+    .steps li { counter-increment: step; padding: 8px 0 8px 32px; position: relative; color: #888; }
+    .steps li.done { color: #34d399; }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #1a1a28;
+      border: 1px solid #3a3a4a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .steps li.done::before { background: #064e3b; border-color: #34d399; color: #34d399; }
+    .steps li.active { color: #60a5fa; }
+    .steps li.active::before { background: #1e3a5f; border-color: #60a5fa; color: #60a5fa; }
+    .error { background: #4c0519; border: 1px solid #7f1d1d; color: #fca5a5; padding: 12px; border-radius: 8px; margin-top: 12px; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #333; border-top: 2px solid #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none; }
+    .powered { text-align: center; color: #444; font-size: 0.8rem; margin-top: 24px; }
+    .powered a { color: #666; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🔮 Hermes x402 Scanner</h1>
+  <p class="subtitle">Multi-factor crypto analysis. $0.01 USDC per scan. On-chain settlement via GatewayWallet.</p>
+
+  <!-- Step 1: Connect -->
+  <div class="card" id="step-connect">
+    <h2>Step 1 — Connect Wallet</h2>
+    <p style="color:#888;margin-bottom:16px;">Connect your wallet with Arc Testnet configured</p>
+    <button id="btn-connect" onclick="connectWallet()">Connect MetaMask</button>
+    <div id="wallet-info" class="hidden" style="margin-top:12px;">
+      <span class="badge badge-green">✓ Connected</span>
+      <span class="addr" id="wallet-addr"></span>
+    </div>
+  </div>
+
+  <!-- Step 2: Scan -->
+  <div class="card hidden" id="step-scan">
+    <h2>Step 2 — Scan a Symbol</h2>
+    <div class="row">
+      <input id="symbol-input" type="text" placeholder="e.g. BTCUSDT" value="BTCUSDT" style="flex:1; min-width:150px; margin-bottom:0;">
+      <button id="btn-scan" onclick="requestScan()">Scan → $0.01</button>
+    </div>
+    <div id="scan-status" class="hidden" style="margin-top:12px;"></div>
+    <div id="scan-error" class="hidden error"></div>
+  </div>
+
+  <!-- Step 3: Pay -->
+  <div class="card hidden" id="step-pay">
+    <h2>Step 3 — Sign Payment</h2>
+    <p style="color:#888;margin-bottom:16px;">EIP-712 TransferWithAuthorization via GatewayWallet</p>
+    <div class="stat"><span class="stat-label">To (Seller)</span><span class="stat-value addr" id="pay-to"></span></div>
+    <div class="stat"><span class="stat-label">Price</span><span class="stat-value" style="color:#34d399;" id="pay-price"></span></div>
+    <div class="stat"><span class="stat-label">Network</span><span class="stat-value">Arc Testnet (5042002)</span></div>
+    <button id="btn-pay" onclick="signAndPay()" style="margin-top:16px;">✍️ Sign Payment & Scan</button>
+    <div id="pay-status" class="hidden" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- Step 4: Results -->
+  <div class="card hidden" id="step-results">
+    <h2>📊 Multi-Factor Analysis</h2>
+    <div id="results-content"></div>
+  </div>
+
+  <p class="powered">
+    Built by <a href="https://github.com/Biboombi/arc-onboard" target="_blank">Hermes Agent #5414</a> on Arc
+  </p>
+</div>
+
+<script type="module">
+  import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@6.13/dist/ethers.min.js';
+
+  const ARC_CHAIN = { chainId: '0x4CF01A', chainName: 'Arc Testnet', rpcUrls: ['https://rpc.testnet.arc.network'], nativeCurrency: { name: 'ARC', symbol: 'ARC', decimals: 18 }, blockExplorerUrls: ['https://testnet.arcscan.app'] };
+  const GATEWAY_WALLET = '0x0077777d7EBA4688BDeF3E311b846F25870A19B9';
+  const USDC_TOKEN = '0x3600000000000000000000000000000000000000';
+  const CHAIN_ID = 5042002;
+  
+  // Server URL — use Vercel proxy in production, localhost in dev
+  const SERVER_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8742' 
+    : '/api'; // proxied via vercel.json rewrites
+
+  let provider, signer, walletAddress, paymentInfo;
+
+  // Expose to global scope for onclick handlers
+  window.connectWallet = connectWallet;
+  window.requestScan = requestScan;
+  window.signAndPay = signAndPay;
+
+  async function connectWallet() {
+    if (!window.ethereum) {
+      alert('Please install MetaMask');
+      return;
+    }
+    try {
+      provider = new ethers.BrowserProvider(window.ethereum);
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      signer = await provider.getSigner();
+      walletAddress = await signer.getAddress();
+      
+      // Switch to Arc Testnet
+      try {
+        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC_CHAIN.chainId }] });
+      } catch (e) {
+        if (e.code === 4902) {
+          await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [ARC_CHAIN] });
+        }
+      }
+
+      document.getElementById('wallet-addr').textContent = walletAddress;
+      document.getElementById('wallet-info').classList.remove('hidden');
+      document.getElementById('btn-connect').disabled = true;
+      document.getElementById('btn-connect').textContent = '✓ Connected';
+      document.getElementById('step-scan').classList.remove('hidden');
+    } catch (err) {
+      showError('scan-error', 'Connection failed: ' + err.message);
+    }
+  }
+
+  async function requestScan() {
+    const symbol = document.getElementById('symbol-input').value.trim().toUpperCase();
+    if (!symbol) return;
+
+    const status = document.getElementById('scan-status');
+    status.classList.remove('hidden');
+    status.innerHTML = '<span class="spinner"></span>Requesting scan...';
+
+    try {
+      const resp = await fetch(`${SERVER_URL}/scan?symbol=${symbol}`);
+      const data = await resp.json();
+
+      if (resp.status === 402) {
+        paymentInfo = data.payment;
+        document.getElementById('pay-to').textContent = paymentInfo.to;
+        document.getElementById('pay-price').textContent = paymentInfo.priceHuman;
+        document.getElementById('step-pay').classList.remove('hidden');
+        status.innerHTML = '<span class="badge badge-yellow">402 Payment Required</span> $0.01 USDC';
+      } else if (resp.status === 200) {
+        // No payment needed (maybe already paid or free mode)
+        displayResults(data);
+      } else {
+        showError('scan-error', data.error || 'Unknown error');
+        status.classList.add('hidden');
+      }
+    } catch (err) {
+      showError('scan-error', 'Failed to reach server: ' + err.message);
+      status.classList.add('hidden');
+    }
+  }
+
+  async function signAndPay() {
+    if (!paymentInfo) return;
+    const status = document.getElementById('pay-status');
+    status.classList.remove('hidden');
+    status.innerHTML = '<span class="spinner"></span>Please sign the EIP-712 message in MetaMask...';
+
+    try {
+      // Build EIP-712 TransferWithAuthorization
+      const domain = {
+        name: 'GatewayWallet',
+        version: '2',
+        chainId: CHAIN_ID,
+        verifyingContract: GATEWAY_WALLET,
+      };
+      const types = {
+        TransferWithAuthorization: [
+          { name: 'from', type: 'address' },
+          { name: 'to', type: 'address' },
+          { name: 'value', type: 'uint256' },
+          { name: 'validAfter', type: 'uint256' },
+          { name: 'validBefore', type: 'uint256' },
+          { name: 'nonce', type: 'bytes32' },
+        ],
+      };
+      const message = {
+        from: walletAddress,
+        to: paymentInfo.to,
+        value: paymentInfo.price,
+        validAfter: 0,
+        validBefore: paymentInfo.validBefore,
+        nonce: ethers.hexlify(ethers.randomBytes(32)),
+      };
+
+      const signature = await signer.signTypedData(domain, types, message);
+      const sig = ethers.Signature.from(signature);
+
+      status.innerHTML = '<span class="spinner"></span>Payment signed. Sending to server...';
+
+      // Build payment payload
+      const payload = {
+        scheme: 'GatewayWalletBatched',
+        chainId: CHAIN_ID,
+        verifyingContract: GATEWAY_WALLET,
+        from: walletAddress,
+        to: paymentInfo.to,
+        value: paymentInfo.price,
+        validAfter: '0',
+        validBefore: String(message.validBefore),
+        nonce: message.nonce,
+        signature: {
+          r: sig.r,
+          s: sig.s,
+          v: sig.v,
+        },
+      };
+
+      const resp = await fetch(
+        `${SERVER_URL}/scan?symbol=${document.getElementById('symbol-input').value.trim().toUpperCase()}`,
+        { headers: { 'Payment-Signature': JSON.stringify(payload) } }
+      );
+      const data = await resp.json();
+
+      if (resp.status === 200) {
+        status.innerHTML = '<span class="badge badge-green">✓ Paid & Scanned</span>';
+        displayResults(data);
+      } else {
+        showError('scan-error', data.error || 'Payment failed');
+        status.classList.add('hidden');
+      }
+    } catch (err) {
+      status.classList.add('hidden');
+      showError('scan-error', 'Signing failed: ' + (err.reason || err.message));
+    }
+  }
+
+  function displayResults(data) {
+    document.getElementById('step-pay').classList.add('hidden');
+    document.getElementById('step-results').classList.remove('hidden');
+    const scan = data.scan;
+    const score = scan.score || {};
+    const gradeClass = score.grade === 'A' ? 'grade-A' : score.grade === 'B' ? 'grade-B' : 'grade-C';
+    const recColor = score.recommendation === 'LONG' ? '#34d399' : score.recommendation === 'SHORT' ? '#f87171' : '#888';
+
+    let factorsHtml = '';
+    if (score.factors) {
+      for (const [name, f] of Object.entries(score.factors)) {
+        factorsHtml += `<span class="factor"><strong>${name}</strong> ${f.signal} (${f.score}pts)</span>`;
+      }
+    }
+
+    document.getElementById('results-content').innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <span class="grade ${gradeClass}">${score.grade || '?'}</span>
+        <span style="font-size:1.5rem;font-weight:800;">${score.total || 0}/100</span>
+        <span style="font-size:1.1rem;color:${recColor};font-weight:700;">${score.recommendation || 'WAIT'}</span>
+      </div>
+      <div class="factors">${factorsHtml}</div>
+      <div style="margin-top:20px;">
+        <div class="stat"><span class="stat-label">Symbol</span><span class="stat-value">${scan.symbol}</span></div>
+        <div class="stat"><span class="stat-label">Price</span><span class="stat-value">$${scan.current_price?.toLocaleString() || scan.price}</span></div>
+        <div class="stat"><span class="stat-label">RSI (14)</span><span class="stat-value">${scan.rsi ?? 'N/A'}</span></div>
+        <div class="stat"><span class="stat-label">OI Δ 1h</span><span class="stat-value" style="color:${(scan.oi_delta_pct||0) >= 0 ? '#34d399' : '#f87171'}">${(scan.oi_delta_pct || 0).toFixed(2)}%</span></div>
+        <div class="stat"><span class="stat-label">OI Total</span><span class="stat-value">$${(scan.open_interest_usd || 0).toLocaleString()}</span></div>
+        <div class="stat"><span class="stat-label">Funding Rate</span><span class="stat-value" style="color:${(scan.funding_rate||0) >= 0 ? '#34d399' : '#f87171'}">${(scan.funding_rate || 0).toFixed(4)}%</span></div>
+        <div class="stat"><span class="stat-label">Taker Ratio</span><span class="stat-value">${scan.taker_ratio || 'N/A'}</span></div>
+        <div class="stat"><span class="stat-label">Settlement TX</span><span class="stat-value addr">${data.settlement_tx || 'N/A'}</span></div>
+      </div>
+    `;
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

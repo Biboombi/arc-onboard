@@ -1,3 +1,4 @@
 x402-scanner/venv/
+x402-scanner/.env
 __pycache__/
 *.pyc

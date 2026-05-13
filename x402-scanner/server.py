@@ -14,11 +14,19 @@ Usage:
 import json, time, os, sys, hmac, hashlib, secrets
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Auto-load .env
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env")
+except ImportError:
+    pass  # python-dotenv not installed, env vars still work
 from typing import Optional
 
 import uvicorn
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from web3 import Web3
 from eth_account.messages import encode_typed_data
@@ -97,6 +105,14 @@ SELLER_KEY = os.environ.get("X402_SELLER_KEY", "")
 seller = Account.from_key(SELLER_KEY) if SELLER_KEY else None
 
 app = FastAPI(title="Hermes x402 Scanner", version="1.0.0")
+
+# CORS — allow frontend from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ─── Payment Helpers ────────────────────────────────────────────────────
@@ -306,12 +322,20 @@ def multi_factor_score(d: dict) -> dict:
         factors["taker"] = {"signal": "balanced", "score": 7}
     total += factors["taker"]["score"]
 
-    # Funding rate (15%)
+    # Funding rate (15%) — v1.1: 猎人轧空分级
     fr = d.get("funding_rate", 0) or 0
-    if fr < -0.02:
+    if fr < -0.50:
+        factors["funding"] = {"signal": "extreme_short_pays_squeeze", "score": 20}
+    elif fr < -0.20:
+        factors["funding"] = {"signal": "strong_short_pays_long", "score": 18}
+    elif fr < -0.10:
         factors["funding"] = {"signal": "short_pays_long", "score": 15}
+    elif fr < -0.02:
+        factors["funding"] = {"signal": "short_pays_long_mild", "score": 13}
     elif fr < 0:
         factors["funding"] = {"signal": "slightly_negative", "score": 10}
+    elif fr > 0.20:
+        factors["funding"] = {"signal": "extreme_long_pays_warning", "score": 0}
     elif fr > 0.05:
         factors["funding"] = {"signal": "extreme_long", "score": 2}
     elif fr > 0.01:

@@ -170,7 +170,7 @@
 <script type="module">
   import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@6.13/dist/ethers.min.js';
 
-  const ARC_CHAIN = { chainId: '0x4CF01A', chainName: 'Arc Testnet', rpcUrls: ['https://rpc.testnet.arc.network'], nativeCurrency: { name: 'ARC', symbol: 'ARC', decimals: 18 }, blockExplorerUrls: ['https://testnet.arcscan.app'] };
+  const ARC_CHAIN = { chainId: '0x4CEF52', chainName: 'Arc Testnet', rpcUrls: ['https://rpc.testnet.arc.network'], nativeCurrency: { name: 'ARC', symbol: 'ARC', decimals: 18 }, blockExplorerUrls: ['https://testnet.arcscan.app'] };
   const GATEWAY_WALLET = '0x0077777d7EBA4688BDeF3E311b846F25870A19B9';
   const USDC_TOKEN = '0x3600000000000000000000000000000000000000';
   const CHAIN_ID = 5042002;
@@ -361,7 +361,7 @@
       <div class="factors">${factorsHtml}</div>
       <div style="margin-top:20px;">
         <div class="stat"><span class="stat-label">Symbol</span><span class="stat-value">${scan.symbol}</span></div>
-        <div class="stat"><span class="stat-label">Price</span><span class="stat-value">$${scan.current_price != null ? '$' + scan.current_price.toLocaleString() : scan.price || 'N/A'}</span></div>
+        <div class="stat"><span class="stat-label">Price</span><span class="stat-value">$${(scan.current_price || scan.price || 0).toLocaleString()}</span></div>
         <div class="stat"><span class="stat-label">RSI (14)</span><span class="stat-value">${scan.rsi ?? 'N/A'}</span></div>
         <div class="stat"><span class="stat-label">OI Δ 1h</span><span class="stat-value" style="color:${(scan.oi_delta_pct||0) >= 0 ? '#34d399' : '#f87171'}">${(scan.oi_delta_pct || 0).toFixed(2)}%</span></div>
         <div class="stat"><span class="stat-label">OI Total</span><span class="stat-value">$${(scan.open_interest_usd || 0).toLocaleString()}</span></div>

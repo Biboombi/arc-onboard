@@ -1,0 +1,10 @@
+# Railway deployment config
+[build]
+  builder = "nixpacks"
+  buildCommand = "pip install -r requirements.txt"
+
+[deploy]
+  startCommand = "python3 server.py --port ${PORT:-8742}"
+  
+[train]
+  framework = "fastapi"

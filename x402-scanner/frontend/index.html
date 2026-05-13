@@ -175,10 +175,10 @@
   const USDC_TOKEN = '0x3600000000000000000000000000000000000000';
   const CHAIN_ID = 5042002;
   
-  // Server URL — use Vercel proxy in production, localhost in dev
+  // Server URL — same origin in production, localhost in dev
   const SERVER_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8742' 
-    : '/api'; // proxied via vercel.json rewrites
+    : window.location.origin; // served from same server
 
   let provider, signer, walletAddress, paymentInfo;
 

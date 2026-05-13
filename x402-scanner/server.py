@@ -25,8 +25,9 @@ from typing import Optional
 
 import uvicorn
 from fastapi import FastAPI, Query, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from web3 import Web3
 from eth_account.messages import encode_typed_data
@@ -113,6 +114,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve frontend static files
+FRONTEND_DIR = Path(__file__).parent / "frontend"
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
 # ─── Payment Helpers ────────────────────────────────────────────────────
@@ -367,8 +373,11 @@ def multi_factor_score(d: dict) -> dict:
 
 # ─── Routes ─────────────────────────────────────────────────────────────
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def root():
+    index_path = FRONTEND_DIR / "index.html"
+    if index_path.exists():
+        return index_path.read_text()
     return {
         "service": "Hermes x402 Multi-Factor Scanner",
         "version": "1.0.0",
@@ -470,7 +479,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Hermes x402 Multi-Factor Scanner")
-    parser.add_argument("--port", type=int, default=8742, help="Server port")
+    parser.add_argument("--port", type=int, default=None, help="Server port (default: $PORT or 8742)")
     parser.add_argument("--price", type=float, default=DEFAULT_PRICE_USD, help="Price in USDC per scan")
     parser.add_argument("--key", type=str, default="", help="Seller private key (or set X402_SELLER_KEY env)")
     args = parser.parse_args()
@@ -481,6 +490,9 @@ if __name__ == "__main__":
     seller_key = args.key or SELLER_KEY
     if seller_key:
         seller = Account.from_key(seller_key)
+
+    # Port: CLI arg > $PORT env > default 8742
+    port = args.port or int(os.environ.get("PORT", 8742))
 
     if seller:
         print(f"🔑 Seller: {seller.address}")
@@ -495,8 +507,8 @@ if __name__ == "__main__":
         print("⚠️  No seller key — running in verification-only mode (no settlement)")
 
     print(f"\n💰 Price: ${DEFAULT_PRICE_USD} USDC per scan")
-    print(f"🌐 Server: http://0.0.0.0:{args.port}")
+    print(f"🌐 Server: http://0.0.0.0:{port}")
     print(f"📡 Endpoint: GET /scan?symbol=BTCUSDT")
-    print(f"📚 Docs: http://0.0.0.0:{args.port}/docs\n")
+    print(f"📚 Docs: http://0.0.0.0:{port}/docs\n")
 
-    uvicorn.run(app, host="0.0.0.0", port=args.port, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

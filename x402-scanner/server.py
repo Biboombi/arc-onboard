@@ -218,57 +218,50 @@ def settle_payment(payload: dict, seller_addr: str) -> Optional[str]:
 # ─── Scanner Logic ──────────────────────────────────────────────────────
 
 def fetch_scanner_data(symbol: str) -> dict:
-    """Fetch OI, funding rate, and RSI from Bybit (Binance geo-blocked on Railway)."""
-    sym = symbol.upper()
-    data = {"symbol": sym, "timestamp": datetime.now(timezone.utc).isoformat(), "source": "bybit"}
+    """Fetch price + RSI from CoinGecko (exchange APIs geo-blocked on Railway)."""
+    sym = symbol.upper().replace("USDT", "").lower()
+    coingecko_ids = {"btc": "bitcoin", "eth": "ethereum", "sol": "solana", "doge": "dogecoin",
+                     "xrp": "ripple", "ada": "cardano", "avax": "avalanche-2", "dot": "polkadot",
+                     "link": "chainlink", "matic": "matic-network", "uni": "uniswap",
+                     "atom": "cosmos", "ltc": "litecoin", "etc": "ethereum-classic",
+                     "xlm": "stellar", "vet": "vechain", "fil": "filecoin", "trx": "tron",
+                     "near": "near", "ape": "apecoin", "op": "optimism", "arb": "arbitrum",
+                     "sui": "sui", "apt": "aptos", "bnb": "binancecoin", "ton": "the-open-network"}
+    cg_id = coingecko_ids.get(sym, "bitcoin")
+    data = {"symbol": sym.upper(), "timestamp": datetime.now(timezone.utc).isoformat(), "source": "coingecko"}
 
-    def bybit_get(path: str) -> dict:
-        url = f"https://api.bybit.com{path}"
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        result = resp.json()
-        if result.get("retCode") != 0:
-            raise Exception(f"Bybit API error: {result.get('retMsg', 'unknown')}")
-        return result["result"]
+    UA = {"User-Agent": "Mozilla/5.0"}
+    cg = lambda path: requests.get(f"https://api.coingecko.com/api/v3{path}", headers=UA, timeout=15).json()
 
     try:
-        # Tickers (mark price, index price, funding rate)
-        tk = bybit_get(f"/v5/market/tickers?category=linear&symbol={sym}")
-        ticker = tk["list"][0]
-        data["mark_price"] = float(ticker["markPrice"])
-        data["price"] = float(ticker.get("indexPrice", ticker["lastPrice"]))
-        data["funding_rate"] = round(float(ticker.get("fundingRate", 0)) * 100, 4)
-        data["current_price"] = float(ticker["lastPrice"])
+        # Price
+        price_data = cg(f"/simple/price?ids={cg_id}&vs_currencies=usd")
+        data["price"] = price_data[cg_id]["usd"]
+        data["current_price"] = data["price"]
 
-        # Open Interest
-        oi_result = bybit_get(f"/v5/market/open-interest?category=linear&symbol={sym}&intervalTime=1h&limit=2")
-        oi_list = oi_result["list"]
-        if oi_list:
-            data["open_interest_usd"] = round(float(oi_list[0]["openInterest"]), 2)
-        if len(oi_list) >= 2:
-            oi_curr = float(oi_list[0]["openInterest"])
-            oi_prev = float(oi_list[1]["openInterest"])
-            data["oi_delta_pct"] = round((oi_curr - oi_prev) / oi_prev * 100, 2) if oi_prev else 0
+        # OHLC for RSI(14) — hourly candles, 24h gives ~24 candles
+        ohlc = cg(f"/coins/{cg_id}/ohlc?vs_currency=usd&days=1")
+        closes = [c[4] for c in ohlc]
+
+        if len(closes) >= 15:
+            deltas = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
+            gains = [d if d > 0 else 0 for d in deltas]
+            losses = [-d if d < 0 else 0 for d in deltas]
+            avg_gain = sum(gains[-14:]) / 14
+            avg_loss = sum(losses[-14:]) / 14
+            data["rsi"] = round(100 - (100 / (1 + avg_gain / avg_loss)) if avg_loss != 0 else 100, 1)
         else:
-            data["oi_delta_pct"] = 0
+            data["rsi"] = 50
 
-        # Taker ratio — Bybit doesn't have direct equivalent, approximate via ticker volume
+        # Fields not available on CoinGecko free tier
+        data["funding_rate"] = None
+        data["mark_price"] = data["price"]
+        data["open_interest_usd"] = None
+        data["oi_delta_pct"] = 0
         data["taker_ratio"] = None
         data["taker_ratio_delta"] = None
 
-        # Klines for RSI(14)
-        klines = bybit_get(f"/v5/market/kline?category=linear&symbol={sym}&interval=60&limit=16")
-        closes = [float(k[4]) for k in reversed(klines["list"])]  # Bybit returns newest first
-
-        # RSI(14) — Wilder smoothing
-        deltas = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
-        gains = [d if d > 0 else 0 for d in deltas]
-        losses = [-d if d < 0 else 0 for d in deltas]
-        avg_gain = sum(gains[-14:]) / 14
-        avg_loss = sum(losses[-14:]) / 14
-        data["rsi"] = round(100 - (100 / (1 + avg_gain / avg_loss)) if avg_loss != 0 else 100, 1)
-
-        # Multi-factor score
+        # Score
         score = multi_factor_score(data)
         data["score"] = score
 

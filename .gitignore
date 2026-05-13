@@ -1,4 +1,6 @@
-x402-scanner/venv/
-x402-scanner/.env
+venv/
 __pycache__/
 *.pyc
+.env
+data/subscriptions.json
+.DS_Store

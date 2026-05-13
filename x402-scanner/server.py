@@ -223,6 +223,17 @@ def fetch_scanner_data(symbol: str) -> dict:
     data = {"symbol": sym, "timestamp": datetime.now(timezone.utc).isoformat(), "source": "okx"}
 
     UA = {"User-Agent": "Mozilla/5.0"}
+    # Supported futures pairs on OKX
+    VALID_SYMBOLS = {"BTC", "ETH", "SOL", "DOGE", "XRP", "ADA", "AVAX", "DOT", "LINK",
+                     "MATIC", "UNI", "ATOM", "LTC", "ETC", "XLM", "VET", "FIL", "TRX",
+                     "NEAR", "APE", "OP", "ARB", "SUI", "APT", "BNB", "TON", "1000PEPE",
+                     "ORDI", "WIF", "TIA", "SEI", "INJ", "RUNE", "STRK", "ZRO", "ENA",
+                     "JUP", "JTO", "BONK", "WLD", "FET", "RENDER", "TAO", "FTM", "ALGO",
+                     "SAND", "MANA", "AXS", "GALA", "EOS", "XTZ", "THETA", "AAVE", "CRV",
+                     "COMP", "YFI", "SNX", "SUSHI", "CAKE", "1INCH", "DYDX", "GMX", "LDO"}
+    base = sym.split("-")[0] if "-" in sym else sym.replace("USDT", "").replace("USD", "")
+    if base.upper() not in VALID_SYMBOLS and base.upper() not in {"BTC", "ETH", "SOL"}:
+        raise Exception(f"'{base}' not supported. Try: BTCUSDT, ETHUSDT, SOLUSDT, DOGEUSDT...")
     def okx_get(path: str) -> dict:
         url = f"https://www.okx.com{path}"
         resp = requests.get(url, headers=UA, timeout=10)

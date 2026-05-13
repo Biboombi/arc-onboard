@@ -331,16 +331,16 @@
     const gradeClass = score.grade === 'A' ? 'grade-A' : score.grade === 'B' ? 'grade-B' : 'grade-C';
     const recColor = score.recommendation === 'LONG' ? '#34d399' : score.recommendation === 'SHORT' ? '#f87171' : '#888';
 
-    // Show error if Binance data fetch failed
+    // Show error if data fetch failed
     if (scan.error) {
       document.getElementById('results-content').innerHTML = `
         <div class="error" style="margin-bottom:12px;">
-          ⚠️ Binance data fetch failed: ${scan.error}
+          ⚠️ Data fetch failed: ${scan.error}
         </div>
         <div class="stat"><span class="stat-label">Symbol</span><span class="stat-value">${scan.symbol || 'N/A'}</span></div>
         <div class="stat"><span class="stat-label">Payment</span><span class="stat-value" style="color:#34d399;">✓ ${data.price_paid || 'Paid'}</span></div>
         <div class="stat"><span class="stat-label">Settlement TX</span><span class="stat-value addr">${data.settlement_tx || 'N/A'}</span></div>
-        <p style="color:#888;margin-top:12px;">Server is up but Binance API may be rate-limiting Railway's IP. Try again in a moment.</p>
+        <p style="color:#888;margin-top:12px;">Tip: Use BTCUSDT, ETHUSDT, SOLUSDT, etc (futures pairs only).</p>
       `;
       return;
     }

@@ -353,7 +353,11 @@ def get_price_history(market_id: str, interval: str = "1h", lookback_hours: int 
         history = data.get("history", [])
         return [{"t": h["t"], "p": h["p"]} for h in history]
     except Exception as e:
-        print(f"[prices-history] Error for {market_id}: {e}")
+        err_str = str(e)
+        if "403" in err_str or "Forbidden" in err_str:
+            pass  # Resolved or restricted market — silent
+        else:
+            print(f"[prices-history] Error for {market_id}: {e}")
         return []
 
 

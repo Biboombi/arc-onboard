@@ -316,11 +316,11 @@
     <div class="chart-header">
       <div class="chart-title" id="chart-title">Select a market to view chart</div>
       <div class="chart-interval" id="chart-intervals">
-        <button class="interval-btn" onclick="setInterval('15m')">15m</button>
-        <button class="interval-btn" onclick="setInterval('1h')">1h</button>
-        <button class="interval-btn active" onclick="setInterval('6h')">6h</button>
-        <button class="interval-btn" onclick="setInterval('1d')">1d</button>
-        <button class="interval-btn" onclick="setInterval('1w')">1w</button>
+        <button class="interval-btn" onclick="setChartInterval('15m')">15m</button>
+        <button class="interval-btn" onclick="setChartInterval('1h')">1h</button>
+        <button class="interval-btn active" onclick="setChartInterval('6h')">6h</button>
+        <button class="interval-btn" onclick="setChartInterval('1d')">1d</button>
+        <button class="interval-btn" onclick="setChartInterval('1w')">1w</button>
       </div>
     </div>
     <div class="chart-container">
@@ -604,7 +604,7 @@ async function loadChartData(marketId) {
   }
 }
 
-function setInterval(interval) {
+function setChartInterval(interval) {
   state.currentInterval = interval;
   document.querySelectorAll('.interval-btn').forEach(b => {
     b.classList.toggle('active', b.textContent.trim() === interval);

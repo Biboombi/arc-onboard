@@ -218,50 +218,64 @@ def settle_payment(payload: dict, seller_addr: str) -> Optional[str]:
 # ─── Scanner Logic ──────────────────────────────────────────────────────
 
 def fetch_scanner_data(symbol: str) -> dict:
-    """Fetch price + RSI from CoinGecko (exchange APIs geo-blocked on Railway)."""
-    sym = symbol.upper().replace("USDT", "").lower()
-    coingecko_ids = {"btc": "bitcoin", "eth": "ethereum", "sol": "solana", "doge": "dogecoin",
-                     "xrp": "ripple", "ada": "cardano", "avax": "avalanche-2", "dot": "polkadot",
-                     "link": "chainlink", "matic": "matic-network", "uni": "uniswap",
-                     "atom": "cosmos", "ltc": "litecoin", "etc": "ethereum-classic",
-                     "xlm": "stellar", "vet": "vechain", "fil": "filecoin", "trx": "tron",
-                     "near": "near", "ape": "apecoin", "op": "optimism", "arb": "arbitrum",
-                     "sui": "sui", "apt": "aptos", "bnb": "binancecoin", "ton": "the-open-network"}
-    cg_id = coingecko_ids.get(sym, "bitcoin")
-    data = {"symbol": sym.upper(), "timestamp": datetime.now(timezone.utc).isoformat(), "source": "coingecko"}
+    """Fetch OI, funding rate, and RSI from OKX (works on Railway, free, no API key)."""
+    sym = symbol.upper().replace("USDT", "-USDT-SWAP")
+    data = {"symbol": sym, "timestamp": datetime.now(timezone.utc).isoformat(), "source": "okx"}
 
     UA = {"User-Agent": "Mozilla/5.0"}
-    cg = lambda path: requests.get(f"https://api.coingecko.com/api/v3{path}", headers=UA, timeout=15).json()
+    def okx_get(path: str) -> dict:
+        url = f"https://www.okx.com{path}"
+        resp = requests.get(url, headers=UA, timeout=10)
+        resp.raise_for_status()
+        result = resp.json()
+        if result.get("code") != "0":
+            raise Exception(f"OKX API error: {result.get('msg', 'unknown')}")
+        return result["data"]
 
     try:
-        # Price
-        price_data = cg(f"/simple/price?ids={cg_id}&vs_currencies=usd")
-        data["price"] = price_data[cg_id]["usd"]
+        # Ticker (mark, last, funding rate)
+        tickers = okx_get(f"/api/v5/market/ticker?instId={sym}")
+        ticker = tickers[0]
+        data["mark_price"] = float(ticker["markPx"])
+        data["price"] = float(ticker["last"])
         data["current_price"] = data["price"]
 
-        # OHLC for RSI(14) — hourly candles, 24h gives ~24 candles
-        ohlc = cg(f"/coins/{cg_id}/ohlc?vs_currency=usd&days=1")
-        closes = [c[4] for c in ohlc]
-
-        if len(closes) >= 15:
-            deltas = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
-            gains = [d if d > 0 else 0 for d in deltas]
-            losses = [-d if d < 0 else 0 for d in deltas]
-            avg_gain = sum(gains[-14:]) / 14
-            avg_loss = sum(losses[-14:]) / 14
-            data["rsi"] = round(100 - (100 / (1 + avg_gain / avg_loss)) if avg_loss != 0 else 100, 1)
+        # Funding rate
+        fr = okx_get(f"/api/v5/public/funding-rate?instId={sym}")
+        if fr:
+            data["funding_rate"] = round(float(fr[0]["fundingRate"]) * 100, 4)
         else:
-            data["rsi"] = 50
+            data["funding_rate"] = 0
 
-        # Fields not available on CoinGecko free tier
-        data["funding_rate"] = None
-        data["mark_price"] = data["price"]
-        data["open_interest_usd"] = None
-        data["oi_delta_pct"] = 0
+        # Open Interest
+        oi = okx_get(f"/api/v5/public/open-interest?instId={sym}")
+        if oi:
+            data["open_interest_usd"] = round(float(oi[0]["oi"]) * float(oi[0].get("px", data["price"])), 2)
+
+        # OI delta — compare last 2 entries
+        oi_hist = okx_get(f"/api/v5/public/open-interest?instId={sym}&limit=2")
+        if len(oi_hist) >= 2:
+            oi_curr = float(oi_hist[0]["oi"])
+            oi_prev = float(oi_hist[1]["oi"])
+            data["oi_delta_pct"] = round((oi_curr - oi_prev) / oi_prev * 100, 2) if oi_prev else 0
+        else:
+            data["oi_delta_pct"] = 0
+
+        # Taker ratio — OKX doesn't expose this, skip
         data["taker_ratio"] = None
         data["taker_ratio_delta"] = None
 
-        # Score
+        # Klines for RSI(14)
+        klines = okx_get(f"/api/v5/market/candles?instId={sym}&bar=1H&limit=16")
+        closes = [float(k[4]) for k in reversed(klines)]
+
+        deltas = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
+        gains = [d if d > 0 else 0 for d in deltas]
+        losses = [-d if d < 0 else 0 for d in deltas]
+        avg_gain = sum(gains[-14:]) / 14
+        avg_loss = sum(losses[-14:]) / 14
+        data["rsi"] = round(100 - (100 / (1 + avg_gain / avg_loss)) if avg_loss != 0 else 100, 1)
+
         score = multi_factor_score(data)
         data["score"] = score
 
@@ -368,7 +382,7 @@ def root():
         return index_path.read_text()
     return {
         "service": "Hermes x402 Multi-Factor Scanner",
-        "version": "1.1.0-bybit",
+        "version": "1.2.0-okx",
         "network": "Arc Testnet",
         "price": f"${DEFAULT_PRICE_USD} USDC per scan",
         "endpoints": ["GET /scan?symbol=BTCUSDT", "GET /debug-binance", "GET /version"],

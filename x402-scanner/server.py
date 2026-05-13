@@ -390,6 +390,25 @@ def root():
     }
 
 
+@app.get("/debug-binance")
+def debug_binance():
+    """Test Binance connectivity from this server's location."""
+    import requests as req
+    results = {}
+    for name, path in [
+        ("openInterest", "/fapi/v1/openInterest?symbol=BTCUSDT"),
+        ("premiumIndex", "/fapi/v1/premiumIndex?symbol=BTCUSDT"),
+        ("takerRatio", "/futures/data/takerlongshortRatio?symbol=BTCUSDT&period=1h&limit=2"),
+        ("klines", "/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=16"),
+    ]:
+        try:
+            r = req.get(f"https://fapi.binance.com{path}", timeout=10)
+            results[name] = f"HTTP {r.status_code} ({len(r.text)} bytes)"
+        except Exception as e:
+            results[name] = f"ERROR: {e}"
+    return results
+
+
 @app.get("/scan")
 def scan(symbol: str = Query(..., description="Symbol, e.g. BTCUSDT"), request: Request = None):
     """

@@ -1,10 +1,11 @@
-# Railway deployment config
+# Railway deployment config — v2 (OKX data source)
 [build]
   builder = "nixpacks"
   buildCommand = "pip install -r requirements.txt"
 
 [deploy]
   startCommand = "python3 server.py --port ${PORT:-8742}"
+  healthcheckPath = "/version"
   
 [train]
   framework = "fastapi"

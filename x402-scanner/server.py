@@ -12,6 +12,7 @@ Usage:
 """
 
 import json, time, os, sys, hmac, hashlib, secrets
+import requests
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -225,8 +226,9 @@ def fetch_scanner_data(symbol: str) -> dict:
 
     def binance_get(path: str) -> dict:
         url = f"https://fapi.binance.com{path}"
-        with urllib.request.urlopen(url, timeout=10) as resp:
-            return json.loads(resp.read())
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
 
     try:
         # Open Interest

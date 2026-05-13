@@ -326,10 +326,24 @@
   function displayResults(data) {
     document.getElementById('step-pay').classList.add('hidden');
     document.getElementById('step-results').classList.remove('hidden');
-    const scan = data.scan;
+    const scan = data.scan || {};
     const score = scan.score || {};
     const gradeClass = score.grade === 'A' ? 'grade-A' : score.grade === 'B' ? 'grade-B' : 'grade-C';
     const recColor = score.recommendation === 'LONG' ? '#34d399' : score.recommendation === 'SHORT' ? '#f87171' : '#888';
+
+    // Show error if Binance data fetch failed
+    if (scan.error) {
+      document.getElementById('results-content').innerHTML = `
+        <div class="error" style="margin-bottom:12px;">
+          ⚠️ Binance data fetch failed: ${scan.error}
+        </div>
+        <div class="stat"><span class="stat-label">Symbol</span><span class="stat-value">${scan.symbol || 'N/A'}</span></div>
+        <div class="stat"><span class="stat-label">Payment</span><span class="stat-value" style="color:#34d399;">✓ ${data.price_paid || 'Paid'}</span></div>
+        <div class="stat"><span class="stat-label">Settlement TX</span><span class="stat-value addr">${data.settlement_tx || 'N/A'}</span></div>
+        <p style="color:#888;margin-top:12px;">Server is up but Binance API may be rate-limiting Railway's IP. Try again in a moment.</p>
+      `;
+      return;
+    }
 
     let factorsHtml = '';
     if (score.factors) {
@@ -347,7 +361,7 @@
       <div class="factors">${factorsHtml}</div>
       <div style="margin-top:20px;">
         <div class="stat"><span class="stat-label">Symbol</span><span class="stat-value">${scan.symbol}</span></div>
-        <div class="stat"><span class="stat-label">Price</span><span class="stat-value">$${scan.current_price?.toLocaleString() || scan.price}</span></div>
+        <div class="stat"><span class="stat-label">Price</span><span class="stat-value">$${scan.current_price != null ? '$' + scan.current_price.toLocaleString() : scan.price || 'N/A'}</span></div>
         <div class="stat"><span class="stat-label">RSI (14)</span><span class="stat-value">${scan.rsi ?? 'N/A'}</span></div>
         <div class="stat"><span class="stat-label">OI Δ 1h</span><span class="stat-value" style="color:${(scan.oi_delta_pct||0) >= 0 ? '#34d399' : '#f87171'}">${(scan.oi_delta_pct || 0).toFixed(2)}%</span></div>
         <div class="stat"><span class="stat-label">OI Total</span><span class="stat-value">$${(scan.open_interest_usd || 0).toLocaleString()}</span></div>

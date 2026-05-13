@@ -2,7 +2,7 @@
 
 **One command to go from zero to your first x402 paid API call on Arc.**
 
-> Built by [@thomas](https://x.com/) — after personally hitting every pitfall during Circle Agent Stack onboarding.
+> Built by [@biboombii](https://github.com/Biboombi) — after personally hitting every pitfall during Circle Agent Stack onboarding.
 
 ## Tools
 
@@ -151,7 +151,24 @@ python3 client.py scan BTCUSDT    # $0.01 per scan
 
 **Scoring:** RSI(25%) + OI Δ(20%) + Taker(15%) + Funding(15%) + Trend(15%) + BTC Corr(10%)
 
-**Network:** Arc Testnet (5042002) · GatewayWallet · USDC nanopayments
+**Live:** [arc-onboard.onrender.com](https://arc-onboard.onrender.com)
+
+
+## ArcPredict Terminal (NEW) 🔮
+
+Polymarket prediction market charting with full TA and x402 subscription:
+
+```bash
+cd polymarket-terminal
+pip install -r requirements.txt
+X402_SELLER_KEY=0x... python3 server.py --port 8743
+```
+
+**Features:** Polymarket Gamma+CLOB API · RSI/MACD/Bollinger/Fib/Volume Profile · TradingView charts · x402 $5/30-day subscription
+
+**Scoring:** 6-factor TA with sentiment labels (BULLISH/BEARISH/NEUTRAL)
+
+**Live:** [arcpredict.onrender.com](https://arcpredict.onrender.com)
 
 ## License
 

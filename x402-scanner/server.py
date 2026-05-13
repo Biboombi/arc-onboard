@@ -395,27 +395,18 @@ def version():
 
 @app.get("/debug-binance")
 def debug_binance():
-    """Test Binance + Bybit connectivity from this server's location."""
+    """Test exchange connectivity from this server's location."""
     import requests as req
     results = {}
-    # Binance
-    for name, path in [
-        ("binance_OI", "/fapi/v1/openInterest?symbol=BTCUSDT"),
-        ("binance_klines", "/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=2"),
-    ]:
-        try:
-            r = req.get(f"https://fapi.binance.com{path}", timeout=10)
-            results[name] = f"HTTP {r.status_code} ({len(r.text)} bytes)"
-        except Exception as e:
-            results[name] = f"ERROR: {e}"
-    # Bybit
     for name, url in [
-        ("bybit_klines", "https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=60&limit=2"),
-        ("bybit_OI", "https://api.bybit.com/v5/market/open-interest?category=linear&symbol=BTCUSDT&intervalTime=1h"),
-        ("bybit_tickers", "https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT"),
+        ("binance", "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=2"),
+        ("bybit", "https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=60&limit=2"),
+        ("okx", "https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP"),
+        ("coingecko", "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"),
+        ("binance_spot", "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"),
     ]:
         try:
-            r = req.get(url, timeout=10)
+            r = req.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             results[name] = f"HTTP {r.status_code} ({len(r.text)} bytes)"
         except Exception as e:
             results[name] = f"ERROR: {e}"

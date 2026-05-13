@@ -207,14 +207,27 @@ def verify_payment_signature(payload: dict) -> Optional[str]:
         )
         recovered = Account.recover_message(encoded, vrs=(v, r, s))
         if recovered.lower() != msg["from"].lower():
+            print(f"[verify] Sig mismatch: recovered={recovered}, from={msg['from']}")
             return None
 
+        # Check timestamps
         now = int(time.time())
-        if now < msg["validAfter"] or now > msg["validBefore"]:
+        if now < msg["validAfter"]:
+            print(f"[verify] Not yet valid: now={now}, validAfter={msg['validAfter']}")
+            return None
+        if now > msg["validBefore"]:
+            print(f"[verify] Expired: now={now}, validBefore={msg['validBefore']}")
+            return None
+
+        # Check that value >= price
+        price_atomic = int(_price_usd * 1_000_000)
+        if msg["value"] < price_atomic:
+            print(f"[verify] Insufficient: value={msg['value']}, required={price_atomic}")
             return None
 
         return recovered
-    except Exception:
+    except Exception as e:
+        print(f"[verify] Exception: {e}")
         return None
 
 

@@ -375,12 +375,22 @@ def root():
         return index_path.read_text()
     return {
         "service": "Hermes x402 Multi-Factor Scanner",
-        "version": "1.0.0",
+        "version": "1.1.0-bybit",
         "network": "Arc Testnet",
         "price": f"${DEFAULT_PRICE_USD} USDC per scan",
-        "endpoints": ["GET /scan?symbol=BTCUSDT"],
+        "endpoints": ["GET /scan?symbol=BTCUSDT", "GET /debug-binance", "GET /version"],
         "docs": "/docs",
     }
+
+
+@app.get("/version")
+def version():
+    import subprocess
+    try:
+        sha = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
+    except Exception:
+        sha = "unknown"
+    return {"version": "1.1.0-bybit", "commit": sha, "source": "bybit", "binance_status": "geo-blocked-451"}
 
 
 @app.get("/debug-binance")

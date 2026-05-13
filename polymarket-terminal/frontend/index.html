@@ -6,6 +6,10 @@
   <title>ArcPredict Terminal — Polymarket TA</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  <script type="module">
+    import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@6.13/dist/ethers.min.js';
+    window.ethers = ethers;
+  </script>
   <style>
     /* ═══════════════ DESIGN SYSTEM: KRAKEN DARK ═══════════════ */
     :root {
@@ -780,17 +784,14 @@ async function subscribeWithX402() {
       nonce: nonce,
     };
 
-    // Step 3: Sign via wallet
+    // Step 3: Sign via ethers.js (matches backend encode_typed_data)
     btn.textContent = 'Sign in wallet...';
-    const sig = await window.ethereum.request({
-      method: 'eth_signTypedData_v4',
-      params: [state.wallet, JSON.stringify({ domain, types, primaryType: 'TransferWithAuthorization', message })],
-    });
-
-    // Parse signature (r, s, v)
-    const r = '0x' + sig.slice(2, 66);
-    const s = '0x' + sig.slice(66, 130);
-    const v = parseInt(sig.slice(130, 132), 16);
+    
+    // Use ethers.js BrowserProvider — same as x402 scanner
+    const ethersProvider = new ethers.BrowserProvider(window.ethereum);
+    const ethersSigner = await ethersProvider.getSigner();
+    const signature = await ethersSigner.signTypedData(domain, types, message);
+    const sig = ethers.Signature.from(signature);
 
     // Step 4: Submit payment + subscribe
     btn.textContent = 'Submitting...';
@@ -801,7 +802,7 @@ async function subscribeWithX402() {
       validAfter: validAfter,
       validBefore: validBefore,
       nonce: nonce,
-      signature: { r, s, v },
+      signature: { r: sig.r, s: sig.s, v: sig.v },
     };
 
     const resp2 = await fetch(`${API}/api/subscribe`, {
